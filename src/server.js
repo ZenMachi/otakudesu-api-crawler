@@ -34,7 +34,7 @@ app.get("/ssgoogle", async (req, res) => {
 
     const image = await page.screenshot({
       fullPage: true,
-      path: "screenshot.png",
+      path: "./screenshots/screenshot.png",
     });
 
     await browser.close();
