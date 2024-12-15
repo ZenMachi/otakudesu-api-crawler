@@ -1,5 +1,5 @@
 const puppeteer = require("puppeteer");
-const { fetchUrlEpisode } = require("./services/handler");
+const { fetchUrlEpisode, fetchDetailAnime } = require("./services/handler");
 
 const fetchOngoingAnime = async (pageNumber) => {
   const finalItems = [];
@@ -70,14 +70,16 @@ const fetchOngoingAnime = async (pageNumber) => {
 };
 
 // getDetailEpisode("Episode 2");
-fetchOngoingAnime(1).then(async (result) => {
-  const itemPop = result.results.pop();
-  const url = itemPop.detail_url;
-  const episode = itemPop.episode;
+// fetchOngoingAnime(1).then(async (result) => {
+//   const itemPop = result.results.pop();
+//   const url = itemPop.detail_url;
+//   const episode = itemPop.episode;
 
-  const urlResult = await fetchUrlEpisode(url, episode);
-  console.log("Title", urlResult.title);
-  console.log("URL", urlResult.url);
-});
+//   const urlResult = await fetchUrlEpisode(url, episode);
+//   console.log("Title", urlResult.title);
+//   console.log("URL", urlResult.url);
+// });
+
+fetchDetailAnime();
 
 // getOngoingAnime(1);
