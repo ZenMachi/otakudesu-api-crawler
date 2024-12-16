@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const puppeteer = require("puppeteer");
+const { fetchDetailAnime } = require("./services/handler");
 
 const PORT = 8000;
 
@@ -81,7 +82,15 @@ app.get("/otakudesu", async (req, res) => {
     console.log(e);
   }
 });
+app.get("/otakudesu2", async (req, res) => {
+  try {
+    const detail = await fetchDetailAnime();
+    res.json(detail);
+  } catch (e) {
+    console.log(e);
+  }
+});
 
-app.listen(PORT, () => {
-  console.log(`Running on port: ${PORT}`);
+let server = app.listen(PORT, () => {
+  console.log(`Running on port: ${server.address().port}`);
 });

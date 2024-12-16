@@ -37,13 +37,13 @@ const fetchDetailAnime = async () => {
   const browser = await puppeteer.launch({
     args: ["--no-sandbox"],
   });
-  const url = "https://otakudesu.cloud/episode/mfghst-episode-12-sub-indo/";
+  const url = "https://otakudesu.cloud/episode/msmrtyr-episode-12-sub-indo/";
   const finalResult = {};
 
   const page = await browser.newPage();
   await page.goto(url);
 
-  const title = "MF Ghost"
+  const title = "Maou-sama, Retry! R";
 
   const episodelist = await page.evaluate(() => {
     const episodes = document.querySelectorAll("#selectcog option");
@@ -57,16 +57,64 @@ const fetchDetailAnime = async () => {
     });
     return arrayEpisodes;
   });
-  const filteredEpisodes = episodelist.filter((item) => !item.url.includes(0));
-  const sortedEpisodes = filteredEpisodes.sort().reverse()
 
-  finalResult.title = title
+  const qualityList = await page.evaluate(() => {
+    const nodeList = document.querySelectorAll(".download ul li");
+    const arrayList = Array.from(nodeList).map((item) => {
+      const formatQuality = item.querySelector("strong").innerText;
+      const size = item.querySelector("i").innerText;
+      const nodeListLink = item.querySelectorAll("a");
+      const links = Array.from(nodeListLink).map((link) => {
+        const providerName = link.innerText;
+        const url = link.getAttribute("href");
+        return {
+          provider: providerName.trim(),
+          url,
+        };
+      });
+      return {
+        format: formatQuality,
+        size,
+        links,
+      };
+    });
+    return arrayList;
+  });
+
+  const filteredEpisodes = episodelist.filter((item) => !item.url.includes(0));
+  const sortedEpisodes = filteredEpisodes.sort().reverse();
+
+  const formatGroup = qualityList.reduce((acc, item) => {
+    const [type, resolution] = item.format.toUpperCase().split(" ");
+    const entry = acc.find((e) => e.format === type);
+
+    const details = {
+      resolution,
+      size: parseFloat(item.size.split(" ")[0]),
+      links: item.links,
+    };
+
+    if (entry) {
+      entry.details.push(details);
+    } else {
+      acc.push({
+        format: type,
+        details: [details],
+      });
+    }
+
+    return acc;
+  }, []);
+
+  finalResult.title = title;
   finalResult.episodes = sortedEpisodes;
+  finalResult.download = formatGroup;
 
   await browser.close();
-  console.log("Detail Anime: ", finalResult);
+  console.log(finalResult);
   return finalResult;
 };
+
 module.exports = {
   fetchUrlEpisode,
   fetchDetailAnime,
