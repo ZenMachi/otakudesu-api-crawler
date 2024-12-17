@@ -49,9 +49,10 @@ const fetchDetailAnime = async () => {
     const episodes = document.querySelectorAll("#selectcog option");
     const arrayEpisodes = Array.from(episodes).map((item) => {
       const episode = item.innerText;
+      const episodeCount = episode.split(" ")[1];
       const url = item.getAttribute("value");
       return {
-        episode: episode.toString(),
+        episode: parseInt(episodeCount),
         url: url,
       };
     });
