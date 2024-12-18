@@ -1,9 +1,17 @@
 const express = require("express");
 const app = express();
 const puppeteer = require("puppeteer");
-const { fetchDetailAnime } = require("./services/handler");
+const {
+  fetchDetailAnime,
+  fetchOngoingAnime,
+  fetchUrlEpisode,
+} = require("./services/handler");
 
-const PORT = 8000;
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json())
+app.use("/api/ongoing", ongoing)
+app.use("/api/anime", anime)
 
 app.get("/", (req, res) => {
   res.send("Hello World");
@@ -84,8 +92,21 @@ app.get("/otakudesu", async (req, res) => {
 });
 app.get("/otakudesu2", async (req, res) => {
   try {
-    const detail = await fetchDetailAnime();
-    res.json(detail);
+    const getOngoing = await fetchOngoingAnime(1);
+    const getOneOngoing = getOngoing.results[0];
+    const titleOngoing = getOneOngoing.title;
+    const episodeOngoing = getOneOngoing.episode;
+    const detailUrlOngoing = getOneOngoing.detail_url;
+
+    const episodeUrl = await fetchUrlEpisode(detailUrlOngoing, episodeOngoing);
+
+    const detailResult = await fetchDetailAnime(titleOngoing, episodeUrl.url);
+
+    console.log("Download", detailResult.download);
+    console.log("Episodes", detailResult.episodes);
+
+    const detail = await fetchOngoingAnime(1);
+    res.json(detailResult);
   } catch (e) {
     console.log(e);
   }
