@@ -1,4 +1,5 @@
 const puppeteer = require("puppeteer");
+const { createLocaleDateTime } = require("../utils/utils");
 
 const fetchOngoingAnime = async (pageNumber) => {
   const finalItems = [];
@@ -65,7 +66,7 @@ const fetchOngoingAnime = async (pageNumber) => {
     results: finalItems,
   };
   await browser.close();
-  console.log("Result : ", object);
+  console.log(`Ongoing Anime Scrapped at ${createLocaleDateTime()}`);
   return object;
 };
 
@@ -92,12 +93,13 @@ const fetchUrlEpisode = async (url, episode) => {
   });
 
   const resultFiltered = resultList.filter(
-    (item) => item.title.includes(`Episode ${episode}`) && item.url.includes("episode")
+    (item) =>
+      item.title.includes(`Episode ${episode}`) && item.url.includes("episode")
   );
   const resultSorted = resultFiltered.sort((min, max) => {
     return (min.title > max.title) - (min.title < max.title);
   });
-  console.log("Result: ", resultSorted);
+  console.log(`Detail url Scrapped ${createLocaleDateTime()}`);
   await browser.close();
   return resultSorted[0];
 };
@@ -110,6 +112,11 @@ const fetchDetailAnime = async (url) => {
 
   const page = await browser.newPage();
   await page.goto(url);
+
+  const titleEpisode = await page.evaluate(() => {
+    const title = document.querySelector(".posttl").innerText;
+    return title;
+  });
 
   const episodelist = await page.evaluate(() => {
     const episodes = document.querySelectorAll("#selectcog option");
@@ -173,11 +180,12 @@ const fetchDetailAnime = async (url) => {
     return acc;
   }, []);
 
+  finalResult.title_episode = titleEpisode;
   finalResult.episodes = sortedEpisodes;
   finalResult.download = formatGroup;
 
   await browser.close();
-  console.log(finalResult);
+  console.log(`Detail Episode Scrapped at ${createLocaleDateTime()}`);
   return finalResult;
 };
 
