@@ -67,7 +67,7 @@ const fetchUrlEpisode = async (url, episode) => {
 
   const resultFiltered = resultList.filter(
     (item) =>
-      item.title.includes(`Episode ${episode}`) && item.url.includes("episode")
+      item.title.includes(`Episode ${episode}`) && item.url.includes("episode"),
   );
   const resultSorted = resultFiltered.sort((min, max) => {
     return (min.title > max.title) - (min.title < max.title);
@@ -162,6 +162,80 @@ const fetchDetailAnime = async (url) => {
   return finalResult;
 };
 
-const testCheerio = async (pageNumber) => {};
+const testCheerio = async (url) => {
+  const finalResult = {};
 
-fetchOngoingAnime(1);
+  const exampleUrl = "https://otakudesu.cloud/episode/anh-episode-12-sub-indo/";
+  const $ = await cheerio.fromURL(exampleUrl);
+
+  const titleEpisode = $(".posttl").text();
+
+  const episodeList = $("#selectcog option")
+    .map((i, item) => {
+      const episodeStr = $(item).text();
+      const episode = episodeStr.split(" ")[1];
+      const url = $(item).attr("value");
+
+      return {
+        episode: parseInt(episode),
+        url,
+      };
+    })
+    .get();
+  const filteredEpisodes = episodeList.filter((item) => !item.url.includes(0));
+  const sortedEpisodes = filteredEpisodes.sort().reverse();
+
+  const qualityList = $(".download ul li")
+    .map((i, item) => {
+      const formatQuality = $("strong", item).text();
+      const size = $("i", item).text();
+      const links = $("a", item).map((i, link) => {
+        const providerName = $(link).text();
+        const url = $(link).attr("href");
+
+        return {
+          provider: providerName.trim(),
+          url,
+        };
+      });
+
+      return {
+        format: formatQuality,
+        size,
+        links,
+      };
+    })
+    .get();
+
+  const sortedDownload = qualityList.reduce((acc, item) => {
+    const [type, resolution] = item.format.toUpperCase().split(" ");
+    const entry = acc.find((e) => e.format === type);
+
+    const details = {
+      resolution,
+      size: parseFloat(item.size.split(" ")[0]),
+      links: item.links,
+    };
+
+    if (entry) {
+      entry.details.push(details);
+    } else {
+      acc.push({
+        format: type,
+        details: [details],
+      });
+    }
+
+    return acc;
+  }, []);
+
+  finalResult.titleEpisode = titleEpisode;
+  finalResult.episodes = sortedEpisodes;
+  finalResult.download = sortedDownload;
+
+  console.log(finalResult);
+  console.info(`Detail Episode Scrapped at ${createLocaleDateTime()}`);
+  return finalResult;
+};
+
+testCheerio();
