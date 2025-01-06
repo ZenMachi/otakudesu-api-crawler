@@ -1,46 +1,27 @@
-const puppeteer = require("puppeteer");
+const cheerio = require("cheerio");
 const { createLocaleDateTime } = require("../utils/utils");
 
 const fetchOngoingAnime = async (pageNumber) => {
-  const finalItems = [];
+  const finalResult = {};
 
-  const browser = await puppeteer.launch({
-    args: ["--no-sandbox"],
-  });
   const url = `https://otakudesu.cloud/ongoing-anime/page/${pageNumber}/`;
+  const $ = await cheerio.fromURL(url);
 
-  const page = await browser.newPage();
-  await page.goto(url);
+  const currentPage = $("span.page-numbers.current").text();
+  const intCurrentPage = parseInt(currentPage);
+  const maxPage = $(".page-numbers:not(.next):not(.prev)").length;
+  const intMaxPage = parseInt(maxPage);
 
-  const urlNow = await page.url();
-  const pageNow = await page.evaluate(() => {
-    const currentPage = document.querySelector(
-      "span.page-numbers.current"
-    ).innerText;
-    return parseInt(currentPage);
-  });
-  const maxPage = await page.evaluate(() => {
-    const max = document.querySelectorAll(
-      ".page-numbers:not(.next):not(.prev)"
-    ).length;
-    return parseInt(max);
-  });
-  const isNext = await page.evaluate(() =>
-    document.querySelector(".next") !== null ? true : false
-  );
-  const isPrev = await page.evaluate(() =>
-    document.querySelector(".prev") !== null ? true : false
-  );
+  const isNext = $(".next").length === 1 ? true : false;
+  const isPrev = $(".prev").length === 1 ? true : false;
 
-  const results = await page.evaluate(() => {
-    const items = document.querySelectorAll(".detpost");
-
-    const animeItems = Array.from(items).map((item) => {
-      const title = item.querySelector(".jdlflm").innerText;
-      const strEpisode = item.querySelector(".epz").innerText.trim();
+  const results = $(".detpost")
+    .map((i, item) => {
+      const title = $(".jdlflm", item).text();
+      const strEpisode = $(".epz", item).text().trim();
       const episode = parseInt(strEpisode.split(" ")[1]);
-      const imgUrl = item.querySelector(".thumbz img").getAttribute("src");
-      const detailUrl = item.querySelector(".thumb a").getAttribute("href");
+      const imgUrl = $(".thumbz img[src]", item).attr("src");
+      const detailUrl = $(".thumb a", item).attr("href");
 
       return {
         title: title,
@@ -48,49 +29,37 @@ const fetchOngoingAnime = async (pageNumber) => {
         img_url: imgUrl,
         detail_url: detailUrl,
       };
-    });
+    })
+    .get();
 
-    return animeItems;
-  });
+  finalResult.page = intCurrentPage;
+  finalResult.max_page = intMaxPage;
+  finalResult.prev = isPrev;
+  finalResult.next = isNext;
+  finalResult.results = results;
 
-  finalItems.push(...results);
+  console.log(finalResult);
+  console.info(`Ongoing Anime Scrapped at ${createLocaleDateTime()}`);
 
-  // await page.waitFor(2000);
-
-  const object = {
-    url_now: urlNow,
-    page: pageNow,
-    max_page: maxPage,
-    prev: isPrev,
-    next: isNext,
-    results: finalItems,
-  };
-  await browser.close();
-  console.log(`Ongoing Anime Scrapped at ${createLocaleDateTime()}`);
-  return object;
+  return finalResult;
 };
 
 const fetchUrlEpisode = async (url, episode) => {
-  const browser = await puppeteer.launch({
-    args: ["--no-sandbox"],
-  });
+  // const exampleUrl = "https://otakudesu.cloud/anime/ao-hako-sub-indo/";
+  // const exampleEpisode = 2;
 
-  const page = await browser.newPage();
+  const $ = await cheerio.fromURL(url);
 
-  await page.goto(url);
-
-  const resultList = await page.evaluate(() => {
-    const list = document.querySelectorAll(".episodelist ul li");
-    const convertedList = Array.from(list).map((item) => {
-      const titleEpisode = item.querySelector("a").innerText;
-      const linkNext = item.querySelector("a").getAttribute("href");
+  const resultList = $(".episodelist ul li")
+    .map((i, item) => {
+      const titleEpisode = $("a", item).text();
+      const url = $("a", item).attr("href");
       return {
         title: titleEpisode,
-        url: linkNext,
+        url,
       };
-    });
-    return convertedList;
-  });
+    })
+    .get();
 
   const resultFiltered = resultList.filter(
     (item) =>
@@ -100,65 +69,56 @@ const fetchUrlEpisode = async (url, episode) => {
     return (min.title > max.title) - (min.title < max.title);
   });
   console.log(`Detail url Scrapped ${createLocaleDateTime()}`);
-  await browser.close();
+
   return resultSorted[0];
 };
 
 const fetchDetailAnime = async (url) => {
-  const browser = await puppeteer.launch({
-    args: ["--no-sandbox"],
-  });
+  // const exampleUrl = "https://otakudesu.cloud/episode/anh-episode-12-sub-indo/";
   const finalResult = {};
 
-  const page = await browser.newPage();
-  await page.goto(url);
+  const $ = await cheerio.fromURL(url);
 
-  const titleEpisode = await page.evaluate(() => {
-    const title = document.querySelector(".posttl").innerText;
-    return title;
-  });
+  const titleEpisode = $(".posttl").text();
 
-  const episodelist = await page.evaluate(() => {
-    const episodes = document.querySelectorAll("#selectcog option");
-    const arrayEpisodes = Array.from(episodes).map((item) => {
-      const episode = item.innerText;
-      const episodeCount = episode.split(" ")[1];
-      const url = item.getAttribute("value");
+  const episodeList = $("#selectcog option")
+    .map((i, item) => {
+      const episodeStr = $(item).text();
+      const episode = episodeStr.split(" ")[1];
+      const url = $(item).attr("value");
+
       return {
-        episode: parseInt(episodeCount),
-        url: url,
+        episode: parseInt(episode),
+        url,
       };
-    });
-    return arrayEpisodes;
-  });
+    })
+    .get();
+  const filteredEpisodes = episodeList.filter((item) => !item.url.includes(0));
+  const sortedEpisodes = filteredEpisodes.sort().reverse();
 
-  const qualityList = await page.evaluate(() => {
-    const nodeList = document.querySelectorAll(".download ul li");
-    const arrayList = Array.from(nodeList).map((item) => {
-      const formatQuality = item.querySelector("strong").innerText;
-      const size = item.querySelector("i").innerText;
-      const nodeListLink = item.querySelectorAll("a");
-      const links = Array.from(nodeListLink).map((link) => {
-        const providerName = link.innerText;
-        const url = link.getAttribute("href");
+  const qualityList = $(".download ul li")
+    .map((i, item) => {
+      const formatQuality = $("strong", item).text();
+      const size = $("i", item).text();
+      const links = $("a", item).map((i, link) => {
+        const providerName = $(link).text();
+        const url = $(link).attr("href");
+
         return {
           provider: providerName.trim(),
           url,
         };
       });
+
       return {
         format: formatQuality,
         size,
         links,
       };
-    });
-    return arrayList;
-  });
+    })
+    .get();
 
-  const filteredEpisodes = episodelist.filter((item) => !item.url.includes(0));
-  const sortedEpisodes = filteredEpisodes.sort().reverse();
-
-  const formatGroup = qualityList.reduce((acc, item) => {
+  const sortedDownload = qualityList.reduce((acc, item) => {
     const [type, resolution] = item.format.toUpperCase().split(" ");
     const entry = acc.find((e) => e.format === type);
 
@@ -182,10 +142,11 @@ const fetchDetailAnime = async (url) => {
 
   finalResult.title_episode = titleEpisode;
   finalResult.episodes = sortedEpisodes;
-  finalResult.download = formatGroup;
+  finalResult.download = sortedDownload;
 
-  await browser.close();
-  console.log(`Detail Episode Scrapped at ${createLocaleDateTime()}`);
+  console.log(finalResult);
+  console.info(`Detail Episode Scrapped at ${createLocaleDateTime()}`);
+
   return finalResult;
 };
 
