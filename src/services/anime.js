@@ -38,7 +38,6 @@ const fetchOngoingAnime = async (pageNumber) => {
   finalResult.next = isNext;
   finalResult.results = results;
 
-  console.log(finalResult);
   console.info(`Ongoing Anime Scrapped at ${createLocaleDateTime()}`);
 
   return finalResult;
@@ -108,7 +107,7 @@ const fetchDetailAnime = async (url) => {
           provider: providerName.trim(),
           url,
         };
-      });
+      }).get();
 
       return {
         format: formatQuality,
@@ -144,7 +143,6 @@ const fetchDetailAnime = async (url) => {
   finalResult.episodes = sortedEpisodes;
   finalResult.download = sortedDownload;
 
-  console.log(finalResult);
   console.info(`Detail Episode Scrapped at ${createLocaleDateTime()}`);
 
   return finalResult;
