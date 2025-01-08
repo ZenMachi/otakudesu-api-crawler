@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "node src/test.js",
+    "prod": "node src/app/index.js",
     "start-dev": "nodemon src/app/index.js"
   },
   "keywords": [],
