@@ -38,7 +38,7 @@ const fetchOngoingAnime = async (pageNumber) => {
   finalResult.next = isNext;
   finalResult.results = results;
 
-  console.info(`Ongoing Anime Scrapped at ${createLocaleDateTime()}`);
+  console.info(`\nOngoing Anime Scrapped at ${createLocaleDateTime()}\n`);
 
   return finalResult;
 };
@@ -67,7 +67,7 @@ const fetchUrlEpisode = async (url, episode) => {
   const resultSorted = resultFiltered.sort((min, max) => {
     return (min.title > max.title) - (min.title < max.title);
   });
-  console.log(`Detail url Scrapped ${createLocaleDateTime()}`);
+  console.log(`\nDetail url Scrapped ${createLocaleDateTime()}\n`);
 
   return resultSorted[0];
 };
@@ -99,15 +99,17 @@ const fetchDetailAnime = async (url) => {
     .map((i, item) => {
       const formatQuality = $("strong", item).text();
       const size = $("i", item).text();
-      const links = $("a", item).map((i, link) => {
-        const providerName = $(link).text();
-        const url = $(link).attr("href");
+      const links = $("a", item)
+        .map((i, link) => {
+          const providerName = $(link).text();
+          const url = $(link).attr("href");
 
-        return {
-          provider: providerName.trim(),
-          url,
-        };
-      }).get();
+          return {
+            provider: providerName.trim(),
+            url,
+          };
+        })
+        .get();
 
       return {
         format: formatQuality,
@@ -143,7 +145,7 @@ const fetchDetailAnime = async (url) => {
   finalResult.episodes = sortedEpisodes;
   finalResult.download = sortedDownload;
 
-  console.info(`Detail Episode Scrapped at ${createLocaleDateTime()}`);
+  console.info(`\nDetail Episode Scrapped at ${createLocaleDateTime()}\n`);
 
   return finalResult;
 };
