@@ -3,6 +3,4 @@ const createLocaleDateTime = () => {
   return date.toLocaleString();
 };
 
-module.exports = {
-    createLocaleDateTime
-}
+export { createLocaleDateTime };

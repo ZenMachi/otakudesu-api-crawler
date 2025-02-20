@@ -5,13 +5,14 @@
   "scripts": {
     "test": "node src/test.js",
     "prod": "node src/app/index.js",
-    "start-dev": "nodemon src/app/index.js"
+    "start-dev": "nodemon src/app/index.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "auto-bind": "^4.0.0",
     "cheerio": "^1.0.0",
     "express": "^4.21.1",
     "morgan": "^1.10.0",
@@ -20,8 +21,13 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.16.0",
+    "@types/express": "^5.0.0",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^22.13.4",
     "eslint": "^9.16.0",
     "globals": "^15.13.0",
-    "nodemon": "^3.1.7"
+    "nodemon": "^3.1.7",
+    "ts-migrate": "^0.1.35",
+    "ts-node": "^10.9.2"
   }
 }
